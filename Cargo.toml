@@ -1,6 +1,7 @@
 [package]
 edition = "2021"
 name = "bullhorn"
+repository = "https://github.com/w3irdrobot/bullhorn"
 version = "0.1.0"
 
 [dependencies]
@@ -19,7 +20,10 @@ humantime = "2.1.0"
 log = "0.4.22"
 nostr-sdk = { version = "0.34.0", features = ["ndb"] }
 qrcode = "0.14.1"
-reqwest = { version = "0.12.5", default-features = false, features = ["rustls-tls", "http2"] }
+reqwest = { version = "0.12.5", default-features = false, features = [
+  "rustls-tls",
+  "http2",
+] }
 serde = "1.0.204"
 tokio = { version = "1.39.2", features = [
   "fs",
@@ -30,3 +34,25 @@ tokio = { version = "1.39.2", features = [
 ] }
 tokio-util = { version = "0.7.11", features = ["rt"] }
 uuid = { version = "1.10.0", features = ["v4"] }
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+# Config for 'cargo dist'
+[workspace.metadata.dist]
+# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.21.0"
+# CI backends to support
+ci = "github"
+# The installers to generate for each app
+installers = []
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = [
+  "aarch64-apple-darwin",
+  "aarch64-unknown-linux-gnu",
+  "x86_64-apple-darwin",
+  "x86_64-unknown-linux-gnu",
+  "x86_64-pc-windows-msvc",
+]

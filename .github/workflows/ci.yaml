@@ -5,6 +5,7 @@ on:
   pull_request: {}
   push:
     branches: [ master ]
+    paths: [ src ]
 
 permissions:
   id-token: write

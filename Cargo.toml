@@ -1,0 +1,32 @@
+[package]
+edition = "2021"
+name = "bullhorn"
+version = "0.1.0"
+
+[dependencies]
+anyhow = "1.0.86"
+config = { version = "0.14.0", default-features = false, features = [
+  "async",
+  "convert-case",
+  "toml",
+] }
+dirs = "5.0.1"
+dotenvy = "0.15.7"
+env_logger = "0.11.5"
+futures = "0.3.30"
+http = "1.1.0"
+humantime = "2.1.0"
+log = "0.4.22"
+nostr-sdk = { version = "0.34.0", features = ["ndb"] }
+qrcode = "0.14.1"
+reqwest = { version = "0.12.5", default-features = false, features = ["rustls-tls", "http2"] }
+serde = "1.0.204"
+tokio = { version = "1.39.2", features = [
+  "fs",
+  "macros",
+  "rt-multi-thread",
+  "signal",
+  "time",
+] }
+tokio-util = { version = "0.7.11", features = ["rt"] }
+uuid = { version = "1.10.0", features = ["v4"] }

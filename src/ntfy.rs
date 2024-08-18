@@ -51,7 +51,7 @@ impl NtfyApiClient {
         Ok(())
     }
 
-    pub async fn send_zap_notification(&self, amount_ms: u32) -> Result<()> {
+    pub async fn send_zap_notification(&self, amount_ms: u64) -> Result<()> {
         let amount = amount_ms / 1_000;
         info!(
             "Sending notification about zaps with amount {} sats",
@@ -181,7 +181,7 @@ pub async fn send_ntfy_messages(client: NtfyApiClient, mut channel: Receiver<Eve
     Ok(())
 }
 
-async fn aggregate_zaps(mut receiver: Receiver<u32>, client: NtfyApiClient, duration: Duration) {
+async fn aggregate_zaps(mut receiver: Receiver<u64>, client: NtfyApiClient, duration: Duration) {
     loop {
         let mut total = 0;
         let Some(amount) = receiver.recv().await else {

@@ -3,6 +3,7 @@ use std::sync::RwLock;
 use std::time::Duration;
 
 use anyhow::Result;
+use lightning_invoice::{Bolt11Invoice, SignedRawBolt11Invoice};
 use log::{debug, error, info, trace, warn};
 use nostr_sdk::prelude::*;
 use tokio::sync::{broadcast::error::RecvError, mpsc::Sender};
@@ -185,18 +186,37 @@ fn get_zap_request(event: &Event) -> Option<Event> {
     Some(event)
 }
 
-pub fn get_zap_request_amount(event: &Event) -> u32 {
+pub fn get_zap_request_amount(event: &Event) -> u64 {
     let Some(event) = get_zap_request(event) else {
         return 0;
     };
 
-    let Some(tag) = event.tags().iter().find(|t| t.kind() == TagKind::Amount) else {
-        debug!("no amount tag found in event {}", event.id());
-        return 0;
-    };
+    match event.tags().iter().find(|t| t.kind() == TagKind::Amount) {
+        Some(tag) => tag
+            .content()
+            .unwrap_or_default()
+            .parse()
+            .unwrap_or_default(),
+        None => {
+            debug!(
+                "no amount tag found in event {}. will look for an ln invoice",
+                event.id()
+            );
+            let Some(tag) = event.tags().iter().find(|t| t.kind() == TagKind::Bolt11) else {
+                debug!("No bolt11 invoice found in event {}", event.id());
+                return 0;
+            };
+            let content = tag.content().unwrap();
+            let signed = content.parse::<SignedRawBolt11Invoice>().unwrap();
+            let Ok(invoice) = Bolt11Invoice::from_signed(signed) else {
+                error!(
+                    "Could not parse the bolt11 tag as a bolt11 invoice: {}",
+                    content
+                );
+                return 0;
+            };
 
-    tag.content()
-        .unwrap_or_default()
-        .parse()
-        .unwrap_or_default()
+            invoice.amount_milli_satoshis().unwrap_or_default()
+        }
+    }
 }

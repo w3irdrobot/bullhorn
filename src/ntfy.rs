@@ -163,10 +163,12 @@ pub async fn send_ntfy_messages(client: NtfyApiClient, mut channel: Receiver<Eve
             Kind::EncryptedDirectMessage => {
                 let _ = client.send_dm_notification().await;
             }
-            Kind::ZapReceipt => {
-                let amount = get_zap_request_amount(&event);
-                let _ = sender.send(amount).await;
-            }
+            Kind::ZapReceipt => match get_zap_request_amount(&event) {
+                Ok(amount) => {
+                    let _ = sender.send(amount).await;
+                }
+                Err(err) => error!("Unable to get amount in zap receipt: {}", err),
+            },
             Kind::TextNote => {
                 let _ = client.send_comment_notification(event.id).await;
             }

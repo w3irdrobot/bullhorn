@@ -1,8 +1,8 @@
-use std::collections::HashSet;
 use std::sync::RwLock;
 use std::time::Duration;
+use std::{collections::HashSet, num::ParseIntError};
 
-use anyhow::Result;
+use anyhow::{anyhow, bail, Result};
 use lightning_invoice::{Bolt11Invoice, SignedRawBolt11Invoice};
 use log::{debug, error, info, trace, warn};
 use nostr_sdk::prelude::*;
@@ -186,9 +186,9 @@ fn get_zap_request(event: &Event) -> Option<Event> {
     Some(event)
 }
 
-pub fn get_zap_request_amount(event: &Event) -> u64 {
+pub fn get_zap_request_amount(event: &Event) -> Result<u64> {
     let Some(event) = get_zap_request(event) else {
-        return 0;
+        bail!("No zap request present")
     };
 
     match event.tags().iter().find(|t| t.kind() == TagKind::Amount) {
@@ -196,7 +196,7 @@ pub fn get_zap_request_amount(event: &Event) -> u64 {
             .content()
             .unwrap_or_default()
             .parse()
-            .unwrap_or_default(),
+            .map_err(|e: ParseIntError| anyhow!(e)),
         None => {
             debug!(
                 "no amount tag found in event {}. will look for an ln invoice",
@@ -204,7 +204,7 @@ pub fn get_zap_request_amount(event: &Event) -> u64 {
             );
             let Some(tag) = event.tags().iter().find(|t| t.kind() == TagKind::Bolt11) else {
                 debug!("No bolt11 invoice found in event {}", event.id());
-                return 0;
+                bail!("Bolt11 missing from event")
             };
             let content = tag.content().unwrap();
             let signed = content.parse::<SignedRawBolt11Invoice>().unwrap();
@@ -213,10 +213,10 @@ pub fn get_zap_request_amount(event: &Event) -> u64 {
                     "Could not parse the bolt11 tag as a bolt11 invoice: {}",
                     content
                 );
-                return 0;
+                bail!("Bolt11 invoice is invalid")
             };
 
-            invoice.amount_milli_satoshis().unwrap_or_default()
+            Ok(invoice.amount_milli_satoshis().unwrap_or_default())
         }
     }
 }
